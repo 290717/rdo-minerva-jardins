@@ -189,23 +189,37 @@ with aba4:
 with aba5:
     st.subheader("📊 Visão Gerencial em Tempo Real")
     st.info("Aqui o Coordenador acompanha todos os registros lançados na obra e pode baixar a planilha completa.")
+    tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(["Histórico RDO", "Mapa de Equipes", "Concretagem", "RNCs Abertas"])
 
-    tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(["Histórico RDO", "Mapa de Equipes", "Concretagem", "Issues Abertas"])
+    # Função auxiliar para exibir tabela editável e salvar alterações
+    def exibir_tabela_editavel(nome_aba, chave_unica):
+        df_atual = carregar_dados(nome_aba)
+        if not df_atual.empty:
+            st.caption("💡 Dê um clique duplo em qualquer célula abaixo para editar o texto e depois clique em Salvar.")
+            df_editado = st.data_editor(df_atual, use_container_width=True, key=chave_unica)
+            
+            if st.button(f"💾 Salvar alterações em {nome_aba}", key=f"btn_{chave_unica}"):
+                with pd.ExcelWriter(ARQUIVO_EXCEL, engine="openpyxl", mode="a", if_sheet_exists="replace") as writer:
+                    df_editado.to_excel(writer, sheet_name=nome_aba, index=False)
+                st.success("Alterações salvas com sucesso!")
+                st.rerun()
+        else:
+            st.info("Nenhum registro cadastrado nesta aba ainda.")
 
     with tab_v1:
-        st.dataframe(carregar_dados("RDO_Diario"), use_container_width=True)
+        exibir_tabela_editavel("RDO_Diario", "edit_rdo")
     with tab_v2:
-        st.dataframe(carregar_dados("Alocacao_Equipes"), use_container_width=True)
+        exibir_tabela_editavel("Alocacao_Equipes", "edit_equipes")
     with tab_v3:
         df_c = carregar_dados("Concretagem")
-        if not df_c.empty:
+        if not df_c.empty and "Volume_m3" in df_c.columns:
             st.metric("Volume Total Concretado (m³)", f"{df_c['Volume_m3'].sum():.2f} m³")
-        st.dataframe(df_c, use_container_width=True)
+        exibir_tabela_editavel("Concretagem", "edit_concreto")
     with tab_v4:
-        st.dataframe(carregar_dados("Issues"), use_container_width=True)
-     # --- INÍCIO DO BLOCO DE EXCLUSÃO ---
+        exibir_tabela_editavel("Issues", "edit_issues")
+    
     st.divider()
-    st.subheader("🗑️ Excluir Registro")
+    st.subheader("Excluir Registro")
 
     # Permite escolher de qual aba da planilha você quer apagar um registro
     aba_escolhida = st.selectbox(
