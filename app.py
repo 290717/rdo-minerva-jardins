@@ -1,28 +1,4 @@
-[17:21, 17/11/2026] Sarotto: import streamlit as st
-import pandas as pd
-import tempfile
-from fpdf import FPDF
-from PIL import Image
-import os
-from datetime import datetime
-
-# Configuracao visual da pagina
-st.set_page_config(page_title="RDO Digital - Minerva", layout="wide", page_icon="🏗️")
-
-# Nome do arquivo que vai guardar os dados (Banco de Dados local)
-ARQUIVO_EXCEL = "Banco_Dados_Obra_Minerva.xlsx"
-
-# Funcao para salvar os dados nas abas do Excel sem apagar os anteriores
-def salvar_dados(nova_linha_df, nome_aba):
-    if os.path.exists(ARQUIVO_EXCEL):
-        with pd.ExcelFile(ARQUIVO_EXCEL) as xls:
-            abas_existentes = {sheet: pd.read_excel(xls, sheet) for sheet in xls.sheet_names}
-    else:
-        abas_existentes = {}
-
-    if nome_aba in abas_existentes:
-        abas_exist…
-[17:25, 17/11/2026] Sarotto: import io
+import io
 import os
 import tempfile
 from datetime import datetime
@@ -30,37 +6,31 @@ from fpdf import FPDF
 import pandas as pd
 from PIL import Image
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
+from supabase import create_client
 
 # Configuracao visual da pagina
 st.set_page_config(page_title="RDO Digital - Minerva", layout="wide", page_icon="🏗️")
 
-# Conexao com o Google Sheets (usando o link salvo nos Secrets)
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Conexao com o Supabase
+@st.cache_resource
+def init_connection():
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
+
+supabase = init_connection()
 
 
-# Funcao para ler os dados salvos no Google Sheets
-def carregar_dados(nome_aba):
+def carregar_dados(nome_tabela):
     try:
-        df = conn.read(worksheet=nome_aba, ttl=0)
-        return df.dropna(how="all")
+        res = supabase.table(nome_tabela).select("*").order("id").execute()
+        return pd.DataFrame(res.data)
     except Exception:
         return pd.DataFrame()
 
 
-# Funcao para salvar novos registros no Google Sheets sem apagar os anteriores
-def salvar_dados(nova_linha_df, nome_aba):
-    df_atual = carregar_dados(nome_aba)
-    if not df_atual.empty:
-        df_atualizado = pd.concat([df_atual, nova_linha_df], ignore_index=True)
-    else:
-        df_atualizado = nova_linha_df
-    conn.update(worksheet=nome_aba, data=df_atualizado)
-
-
-# Funcao para sobrescrever uma aba inteira (usada ao editar ou excluir)
-def sobrescrever_aba(df_novo, nome_aba):
-    conn.update(worksheet=nome_aba, data=df_novo)
+def salvar_dados(dados_dict, nome_tabela):
+    supabase.table(nome_tabela).insert(dados_dict).execute()
 
 
 # --- CABECALHO DO SISTEMA ---
@@ -111,17 +81,16 @@ with aba1:
     atividades = st.text_area("Resumo das Atividades Executadas Hoje")
 
     if st.button("Salvar RDO do Dia", type="primary"):
-        df_rdo = pd.DataFrame([{
-            "Data": data_rdo.strftime("%d/%m/%Y"),
-            "Clima_Manha": clima_m,
-            "Clima_Tarde": clima_t,
-            "Condicao": condicao,
-            "Horas_Paradas": horas_chuva,
-            "Terceiros": ", ".join(empresas),
-            "Obs_Visitas": obs_visitas,
-            "Atividades": atividades
-        }])
-        salvar_dados(df_rdo, "RDO_Diario")
+        salvar_dados({
+            "data": data_rdo.strftime("%d/%m/%Y"),
+            "clima_manha": clima_m,
+            "clima_tarde": clima_t,
+            "condicao": condicao,
+            "horas_paradas": horas_chuva,
+            "terceiros": ", ".join(empresas),
+            "obs_visitas": obs_visitas,
+            "atividades": atividades
+        }, "rdo_diario")
         st.success("✅ RDO salvo na nuvem com sucesso!")
 
 # ==========================================
@@ -148,16 +117,15 @@ with aba2:
         status_serv = st.selectbox("Status", ["Iniciado", "Em Andamento", "Concluído"])
 
     if st.button("Registrar Alocação de Equipe"):
-        df_eq = pd.DataFrame([{
-            "Data": datetime.today().strftime("%d/%m/%Y"),
-            "Colaborador": colab,
-            "Empresa": emp_colab,
-            "Pavimento": pav,
-            "Unidade": apto,
-            "Servico": serv,
-            "Status": status_serv
-        }])
-        salvar_dados(df_eq, "Alocacao_Equipes")
+        salvar_dados({
+            "data": datetime.today().strftime("%d/%m/%Y"),
+            "colaborador": colab,
+            "empresa": emp_colab,
+            "pavimento": pav,
+            "unidade": apto,
+            "servico": serv,
+            "status": status_serv
+        }, "alocacao_equipes")
         st.success(f"✅ {colab} registrado no {pav} ({apto})!")
 
 # ==========================================
@@ -179,17 +147,16 @@ with aba3:
     status_conc = st.radio("Status do Recebimento", ["Aprovado", "Aprovado com Aditivo", "Recusado"], horizontal=True)
 
     if st.button("Salvar Caminhão de Concreto"):
-        df_conc = pd.DataFrame([{
-            "Data": datetime.today().strftime("%d/%m/%Y"),
-            "Concreteira": concreteira,
-            "NF": nf,
-            "Peca": peca,
-            "FCK": fck,
-            "Volume_m3": vol_m3,
-            "Slump_cm": slump,
-            "Status": status_conc
-        }])
-        salvar_dados(df_conc, "Concretagem")
+        salvar_dados({
+            "data": datetime.today().strftime("%d/%m/%Y"),
+            "concreteira": concreteira,
+            "nf": nf,
+            "peca": peca,
+            "fck": int(fck),
+            "volume_m3": float(vol_m3),
+            "slump_cm": int(slump),
+            "status": status_conc
+        }, "concretagem")
         st.success(f"✅ Caminhão NF {nf} ({vol_m3} m³) registrado!")
 
 # ==========================================
@@ -211,16 +178,15 @@ with aba4:
     desc_issue = st.text_area("Descrição detalhada do problema")
 
     if st.button("Abrir RNC de Qualidade"):
-        df_iss = pd.DataFrame([{
-            "Data_Abertura": datetime.today().strftime("%d/%m/%Y"),
-            "Local": local_issue,
-            "Disciplina": disc_issue,
-            "Descricao": desc_issue,
-            "Responsavel": resp_issue,
-            "Prazo": prazo_issue.strftime("%d/%m/%Y"),
-            "Status": "Aberto"
-        }])
-        salvar_dados(df_iss, "Issues")
+        salvar_dados({
+            "data_abertura": datetime.today().strftime("%d/%m/%Y"),
+            "local": local_issue,
+            "disciplina": disc_issue,
+            "descricao": desc_issue,
+            "responsavel": resp_issue,
+            "prazo": prazo_issue.strftime("%d/%m/%Y"),
+            "status": "Aberto"
+        }, "issues")
         st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
 
 # ==========================================
@@ -228,46 +194,59 @@ with aba4:
 # ==========================================
 with aba5:
     st.subheader("📊 Visão Gerencial em Tempo Real")
-    st.info("Aqui o Coordenador acompanha todos os registros lançados na obra, edita células se necessário e baixa relatórios.")
+    st.info("Dados sincronizados na nuvem. Dê dois cliques em qualquer célula para editar e clique em Salvar.")
 
     tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(["Histórico RDO", "Mapa de Equipes", "Concretagem", "RNCs Abertas"])
 
-    def exibir_tabela_editavel(nome_aba, chave_unica):
-        df_atual = carregar_dados(nome_aba)
+    def exibir_tabela_editavel(nome_tabela, chave_unica):
+        df_atual = carregar_dados(nome_tabela)
         if not df_atual.empty:
-            st.caption("💡 Dê um clique duplo em qualquer célula abaixo para corrigir um texto e depois clique em Salvar.")
-            df_editado = st.data_editor(df_atual, use_container_width=True, key=chave_unica)
-            if st.button(f"💾 Salvar alterações em {nome_aba}", key=f"btn_{chave_unica}"):
-                sobrescrever_aba(df_editado, nome_aba)
-                st.success("Alterações salvas na nuvem com sucesso!")
+            df_editado = st.data_editor(df_atual, use_container_width=True, disabled=["id"], key=chave_unica)
+            if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
+                for _, row in df_editado.iterrows():
+                    dados_linha = row.drop("id").to_dict()
+                    supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
+                st.success("Alterações salvas na nuvem!")
                 st.rerun()
         else:
             st.info("Nenhum registro cadastrado nesta aba ainda.")
 
     with tab_v1:
-        exibir_tabela_editavel("RDO_Diario", "edit_rdo")
+        exibir_tabela_editavel("rdo_diario", "edit_rdo")
     with tab_v2:
-        exibir_tabela_editavel("Alocacao_Equipes", "edit_equipes")
+        exibir_tabela_editavel("alocacao_equipes", "edit_equipes")
     with tab_v3:
-        df_c = carregar_dados("Concretagem")
-        if not df_c.empty and "Volume_m3" in df_c.columns:
-            st.metric("Volume Total Concretado (m³)", f"{pd.to_numeric(df_c['Volume_m3'], errors='coerce').sum():.2f} m³")
-        exibir_tabela_editavel("Concretagem", "edit_concreto")
+        df_c = carregar_dados("concretagem")
+        if not df_c.empty and "volume_m3" in df_c.columns:
+            st.metric("Volume Total Concretado (m³)", f"{pd.to_numeric(df_c['volume_m3'], errors='coerce').sum():.2f} m³")
+        exibir_tabela_editavel("concretagem", "edit_concreto")
     with tab_v4:
-        exibir_tabela_editavel("Issues", "edit_issues")
+        exibir_tabela_editavel("issues", "edit_issues")
 
     # --- BLOCO DE EXCLUSÃO ---
     st.divider()
     st.subheader("🗑️ Excluir Registro")
     aba_escolhida = st.selectbox(
-        "Escolha a categoria do registro:",
-        ["RDO_Diario", "Alocacao_Equipes", "Concretagem", "Issues"]
+        "Escolha a categoria:",
+        ["rdo_diario", "alocacao_equipes", "concretagem", "issues"]
     )
     df_exclusao = carregar_dados(aba_escolhida)
 
     if not df_exclusao.empty:
-        opcoes = [f"Linha {i} | {row.iloc} - {row.iloc}" for i, row in df_exclusao.iterrows()]
+        opcoes = [f"ID {row['id']} | {row.iloc[1]} - {row.iloc[2]}" for _, row in df_exclusao.iterrows()]
         selecionado = st.selectbox("Selecione o registro para apagar:", opcoes)
 
         if st.button("Excluir Registro Selecionado", type="primary"):
-            indice = int(selecionado.split(" "))
+            id_registro = int(selecionado.split(" ")[1])
+            supabase.table(aba_escolhida).delete().eq("id", id_registro).execute()
+            st.success("Registro excluído da nuvem!")
+            st.rerun()
+    else:
+        st.info("Nenhum registro cadastrado nesta categoria.")
+
+    # --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
+    st.divider()
+    output_excel = io.BytesIO()
+    with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
+        for tabela in ["rdo_diario", "alocacao_equipes", "concretagem", "issues"]:
+            df_temp = carregar_dados(tabela)
