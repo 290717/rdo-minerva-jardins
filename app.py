@@ -320,7 +320,7 @@ with aba5:
 
     # --- BLOCO DE EXCLUSÃO ---
     st.divider()
-    st.subheader("🗑️ Excluir Registro")
+    st.subheader("Excluir Registro")
     aba_escolhida = st.selectbox(
         "Escolha a categoria:",
         ("rdo_diario", "alocacao_equipes", "concretagem", "issues")
