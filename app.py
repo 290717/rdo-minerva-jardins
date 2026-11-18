@@ -300,7 +300,7 @@ with aba5:
             if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
                 df_limpo = df_editado.fillna("")
                 for _, row in df_limpo.iterrows():
-                    dados_linha = row.drop(labels=("Nº", "id")).to_dict()
+                   dados_linha = row.drop(labels=["Nº", "id"], errors="ignore").to_dict()
                     supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
                 st.success("Alterações salvas na nuvem!")
                 st.rerun()
@@ -380,3 +380,6 @@ with aba5:
         file_name=f"RDO_Minerva_{datetime.today().strftime('%Y%m%d')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    git add app.py
+git commit -m "Corrigir erro KeyError ao salvar edicao"
+git push
