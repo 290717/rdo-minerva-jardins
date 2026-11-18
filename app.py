@@ -246,12 +246,31 @@ with aba5:
     with tab_v4:
         exibir_tabela_editavel("issues", "edit_issues")
 
-    # --- BLOCO DE EXCLUSÃO ---
+  # --- BLOCO DE EXCLUSÃO ---
     st.divider()
-    st.subheader("Excluir Registro")
+    st.subheader("🗑️ Excluir Registro")
     aba_escolhida = st.selectbox(
         "Escolha a categoria:",
-        ["rdo_diario", "alocacao_equipes", "concretagem", "issues"]
+        ("rdo_diario", "alocacao_equipes", "concretagem", "issues")
     )
     df_exclusao = carregar_dados(aba_escolhida)
     if not df_exclusao.empty:
+        df_exclusao = df_exclusao.reset_index(drop=True)
+        mapa_ids = {}
+        opcoes = []
+        for idx, row in df_exclusao.iterrows():
+            num_visual = idx + 1
+            col1_txt = row.iloc[1] if len(row) > 1 else ""
+            col2_txt = row.iloc[2] if len(row) > 2 else ""
+            rotulo = f"Nº {num_visual} | {col1_txt} - {col2_txt}"
+            opcoes.append(rotulo)
+            mapa_ids[rotulo] = int(row["id"])
+
+        selecionado = st.selectbox("Selecione o registro para apagar:", opcoes)
+        if st.button("Excluir Registro Selecionado", type="primary"):
+            id_real = mapa_ids[selecionado]
+            supabase.table(aba_escolhida).delete().eq("id", id_real).execute()
+            st.success("Registro excluído da nuvem!")
+            st.rerun()
+    else:
+        st.info("Nenhum registro cadastrado nesta categoria.")
