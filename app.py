@@ -45,6 +45,51 @@ def salvar_dados(dados_dict, nome_tabela):
         return False
 
 
+def criar_pdf_rdo(df_dados, lista_fotos):
+    pdf = FPDF()
+    pdf.add_page()
+
+    # Cabeçalho do Relatório
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, "RELATORIO DIARIO DE OBRA (RDO) - MINERVA", ln=True, align="C")
+    pdf.ln(5)
+
+    # Pega o último RDO lançado no banco
+    if not df_dados.empty:
+        ultimo_rdo = df_dados.drop(columns="id", errors="ignore").iloc[-1]
+        pdf.set_font("Arial", size=11)
+
+        for coluna, valor in ultimo_rdo.items():
+            texto = f"{coluna}: {valor}".encode("latin-1", "replace").decode("latin-1")
+            pdf.multi_cell(0, 8, texto)
+            pdf.ln(1)
+    else:
+        pdf.set_font("Arial", size=11)
+        pdf.cell(0, 10, "Nenhum dado de RDO registrado na planilha ainda.", ln=True)
+
+    # Seção de Fotos Anexadas
+    if lista_fotos:
+        pdf.ln(5)
+        pdf.set_font("Arial", "B", 13)
+        pdf.cell(0, 10, "REGISTRO FOTOGRAFICO DE CAMPO:", ln=True)
+        pdf.ln(3)
+
+        for foto in lista_fotos:
+            img = Image.open(foto)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                img.save(tmp.name, format="JPEG")
+                if pdf.get_y() > 190:
+                    pdf.add_page()
+                pdf.image(tmp.name, x=15, w=120)
+                pdf.ln(5)
+            os.unlink(tmp.name)
+
+    return bytes(pdf.output())
+
+
 # --- CABEÇALHO DO SISTEMA ---
 st.title("🏗️ RDO Digital/Gestão de Campo")
 st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
@@ -60,7 +105,7 @@ aba1, aba2, aba3, aba4, aba5 = st.tabs((
 ))
 
 # ==========================================
-# ABA 1: RDO DIÁRIO E CLIMA REAL
+# ABA 1: RDO DIÁRIO E CLIMA REAL + PDF/FOTOS
 # ==========================================
 with aba1:
     st.subheader("Registro Diário de Obra")
@@ -107,6 +152,28 @@ with aba1:
         }, "rdo_diario")
         if ok:
             st.success("✅ RDO salvo na nuvem com sucesso!")
+
+    # --- GERADOR DE PDF COM FOTOS NA ABA 1 ---
+    st.divider()
+    st.subheader("📄 Gerar Relatório Diário em PDF (Com Fotos)")
+
+    fotos_enviadas = st.file_uploader(
+        "Anexar fotos do serviço executado (JPG ou PNG):",
+        type=("jpg", "jpeg", "png"),
+        accept_multiple_files=True
+    )
+
+    if st.button("Preparar PDF do Último RDO"):
+        df_rdo_atual = carregar_dados("rdo_diario")
+        pdf_pronto = criar_pdf_rdo(df_rdo_atual, fotos_enviadas)
+
+        st.success("PDF gerado com sucesso! Clique abaixo para baixar.")
+        st.download_button(
+            label="📥 Baixar Relatório RDO em PDF",
+            data=pdf_pronto,
+            file_name=f"RDO_Minerva_Jardins_{datetime.today().strftime('%Y%m%d')}.pdf",
+            mime="application/pdf"
+        )
 
 # ==========================================
 # ABA 2: ALOCAÇÃO DE EQUIPES POR APARTAMENTO
@@ -186,7 +253,7 @@ with aba4:
         local_issue = st.text_input("Local da Não Conformidade (Ex: Pilar P14 - Térreo)")
         disc_issue = st.selectbox("Disciplina", (
             "Estrutura", "Alvenaria", "Monocapa / Fachada", "Instalações",
-            "Drywall", "Carpintaria", "Contrapiso", "Hidraulica", "Elétrica","Segurança do Trabalho"
+            "Drywall", "Carpintaria", "Contrapiso", "Hidraulica", "Elétrica", "Segurança do Trabalho"
         ))
     with ci2:
         resp_issue = st.selectbox("Responsável pela Correção", ("Mestre de Obras", "Cerqueira", "Saint-Gobain", "Equipe Minerva"))
@@ -205,9 +272,7 @@ with aba4:
             "status": "Aberto"
         }, "issues")
         if ok:
-            st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
-
-# ==========================================
+          # ==========================================
 # ABA 5: PAINEL DO COORDENADOR (VISUALIZAÇÃO)
 # ==========================================
 with aba5:
@@ -252,7 +317,7 @@ with aba5:
     with tab_v4:
         exibir_tabela_editavel("issues", "edit_issues")
 
-   # --- BLOCO DE EXCLUSÃO ---
+    # --- BLOCO DE EXCLUSÃO ---
     st.divider()
     st.subheader("🗑️ Excluir Registro")
     aba_escolhida = st.selectbox(
@@ -282,3 +347,34 @@ with aba5:
             st.rerun()
     else:
         st.info("Nenhum registro cadastrado nesta categoria.")
+
+    # --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
+    st.divider()
+    output_excel = io.BytesIO()
+    with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
+        tem_dados = False
+        tabelas = {
+            "RDO_Diario": "rdo_diario",
+            "Equipes": "alocacao_equipes",
+            "Concretagem": "concretagem",
+            "RNC_Qualidade": "issues"
+        }
+        for aba_excel, nome_tab in tabelas.items():
+            df_exp = carregar_dados(nome_tab)
+            if not df_exp.empty:
+                df_exp = df_exp.drop(columns="id", errors="ignore").reset_index(drop=True)
+                df_exp.insert(0, "Nº", range(1, len(df_exp) + 1))
+                df_exp.to_excel(writer, sheet_name=aba_excel, index=False)
+                tem_dados = True
+
+        if not tem_dados:
+            pd.DataFrame({"Aviso": ("Nenhum dado cadastrado ainda.",)}).to_excel(
+                writer, sheet_name="Sem_Dados", index=False
+            )
+
+    st.download_button(
+        label="📥 Baixar Planilha Excel Completa (.xlsx)",
+        data=output_excel.getvalue(),
+        file_name=f"RDO_Minerva_{datetime.today().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )  
