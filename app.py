@@ -380,6 +380,4 @@ with aba5:
         file_name=f"RDO_Minerva_{datetime.today().strftime('%Y%m%d')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    git add app.py
-git commit -m "Corrigir erro KeyError ao salvar edicao"
-git push
+    
