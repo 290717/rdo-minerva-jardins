@@ -272,7 +272,9 @@ with aba4:
             "status": "Aberto"
         }, "issues")
         if ok:
-          # ==========================================
+            st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
+
+# ==========================================
 # ABA 5: PAINEL DO COORDENADOR (VISUALIZAÇÃO)
 # ==========================================
 with aba5:
@@ -377,4 +379,4 @@ with aba5:
         data=output_excel.getvalue(),
         file_name=f"RDO_Minerva_{datetime.today().strftime('%Y%m%d')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )  
+    )
