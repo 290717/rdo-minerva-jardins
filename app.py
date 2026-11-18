@@ -1,18 +1,14 @@
 import io
-import os
-import tempfile
 from datetime import datetime
-from fpdf import FPDF
 import pandas as pd
-from PIL import Image
 import streamlit as st
 from supabase import create_client
 
-# Configuracao visual da pagina
+# Configuração visual da página
 st.set_page_config(page_title="RDO Digital - Minerva", layout="wide", page_icon="🏗️")
 
 
-# Conexao com o Supabase
+# Conexão com o Supabase
 @st.cache_resource
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
@@ -32,10 +28,15 @@ def carregar_dados(nome_tabela):
 
 
 def salvar_dados(dados_dict, nome_tabela):
-    supabase.table(nome_tabela).insert(dados_dict).execute()
+    try:
+        supabase.table(nome_tabela).insert(dados_dict).execute()
+        return True
+    except Exception as e:
+        st.error(f"Erro ao salvar no banco ({nome_tabela}): {e}")
+        return False
 
 
-# --- CABECALHO DO SISTEMA ---
+# --- CABEÇALHO DO SISTEMA ---
 st.title("🏗️ RDO Digital/Gestão de Campo")
 st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0")
 st.divider()
@@ -83,7 +84,7 @@ with aba1:
     atividades = st.text_area("Resumo das Atividades Executadas Hoje")
 
     if st.button("Salvar RDO do Dia", type="primary"):
-        salvar_dados({
+        ok = salvar_dados({
             "data": data_rdo.strftime("%d/%m/%Y"),
             "clima_manha": clima_m,
             "clima_tarde": clima_t,
@@ -93,7 +94,8 @@ with aba1:
             "obs_visitas": obs_visitas,
             "atividades": atividades
         }, "rdo_diario")
-        st.success("✅ RDO salvo na nuvem com sucesso!")
+        if ok:
+            st.success("✅ RDO salvo na nuvem com sucesso!")
 
 # ==========================================
 # ABA 2: ALOCAÇÃO DE EQUIPES POR APARTAMENTO
@@ -114,12 +116,12 @@ with aba2:
     with c3:
         serv = st.selectbox("Serviço Executado", [
             "Alvenaria", "Monocapa", "Contrapiso", "Hidráulica", "Elétrica",
-            "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura", "Armador"
+            "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura"
         ])
         status_serv = st.selectbox("Status", ["Iniciado", "Em Andamento", "Concluído"])
 
     if st.button("Registrar Alocação de Equipe"):
-        salvar_dados({
+        ok = salvar_dados({
             "data": datetime.today().strftime("%d/%m/%Y"),
             "colaborador": colab,
             "empresa": emp_colab,
@@ -128,7 +130,8 @@ with aba2:
             "servico": serv,
             "status": status_serv
         }, "alocacao_equipes")
-        st.success(f"✅ {colab} registrado no {pav} ({apto})!")
+        if ok:
+            st.success(f"✅ {colab} registrado no {pav} ({apto})!")
 
 # ==========================================
 # ABA 3: CONTROLE DE CONCRETAGEM
@@ -149,7 +152,7 @@ with aba3:
     status_conc = st.radio("Status do Recebimento", ["Aprovado", "Aprovado com Aditivo", "Recusado"], horizontal=True)
 
     if st.button("Salvar Caminhão de Concreto"):
-        salvar_dados({
+        ok = salvar_dados({
             "data": datetime.today().strftime("%d/%m/%Y"),
             "concreteira": concreteira,
             "nf": nf,
@@ -159,7 +162,8 @@ with aba3:
             "slump_cm": int(slump),
             "status": status_conc
         }, "concretagem")
-        st.success(f"✅ Caminhão NF {nf} ({vol_m3} m³) registrado!")
+        if ok:
+            st.success(f"✅ Caminhão NF {nf} ({vol_m3} m³) registrado!")
 
 # ==========================================
 # ABA 4: RNC (CONTROLE DE QUALIDADE)
@@ -180,7 +184,7 @@ with aba4:
     desc_issue = st.text_area("Descrição detalhada do problema")
 
     if st.button("Abrir RNC de Qualidade"):
-        salvar_dados({
+        ok = salvar_dados({
             "data_abertura": datetime.today().strftime("%d/%m/%Y"),
             "local": local_issue,
             "disciplina": disc_issue,
@@ -189,7 +193,8 @@ with aba4:
             "prazo": prazo_issue.strftime("%d/%m/%Y"),
             "status": "Aberto"
         }, "issues")
-        st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
+        if ok:
+            st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
 
 # ==========================================
 # ABA 5: PAINEL DO COORDENADOR (VISUALIZAÇÃO)
@@ -228,27 +233,22 @@ with aba5:
 
     # --- BLOCO DE EXCLUSÃO ---
     st.divider()
-    st.subheader("Excluir Registro")
+    st.subheader("🗑️ Excluir Registro")
     aba_escolhida = st.selectbox(
         "Escolha a categoria:",
         ["rdo_diario", "alocacao_equipes", "concretagem", "issues"]
     )
     df_exclusao = carregar_dados(aba_escolhida)
-
     if not df_exclusao.empty:
-        opcoes = [f"ID {row['id']} | {row.iloc} - {row.iloc}" for _, row in df_exclusao.iterrows()]
+        opcoes = [
+            f"ID {row['id']} | {row.iloc[1] if len(row) > 1 else ''} - {row.iloc[2] if len(row) > 2 else ''}"
+            for _, row in df_exclusao.iterrows()
+        ]
         selecionado = st.selectbox("Selecione o registro para apagar:", opcoes)
-
         if st.button("Excluir Registro Selecionado", type="primary"):
-            id_registro = int(selecionado.split(" "))
+            id_registro = int(selecionado.split(" ")[1])
             supabase.table(aba_escolhida).delete().eq("id", id_registro).execute()
             st.success("Registro excluído da nuvem!")
             st.rerun()
     else:
         st.info("Nenhum registro cadastrado nesta categoria.")
-
-    # --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
-    st.divider()
-    output_excel = io.BytesIO()
-    with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
-        tem_dados = False
