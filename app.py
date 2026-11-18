@@ -205,7 +205,7 @@ with aba5:
 
     tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(["Histórico RDO", "Mapa de Equipes", "Concretagem", "RNCs Abertas"])
 
-   def exibir_tabela_editavel(nome_tabela, chave_unica):
+        def exibir_tabela_editavel(nome_tabela, chave_unica):
         df_atual = carregar_dados(nome_tabela)
         if not df_atual.empty:
             # Remove linhas totalmente em branco (exceto o id)
