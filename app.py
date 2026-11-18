@@ -225,7 +225,7 @@ with aba5:
 
     # --- BLOCO DE EXCLUSÃO ---
     st.divider()
-    st.subheader("🗑️ Excluir Registro")
+    st.subheader("Excluir Registro")
     aba_escolhida = st.selectbox(
         "Escolha a categoria:",
         ["rdo_diario", "alocacao_equipes", "concretagem", "issues"]
@@ -245,8 +245,24 @@ with aba5:
         st.info("Nenhum registro cadastrado nesta categoria.")
 
     # --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
+    # --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
     st.divider()
     output_excel = io.BytesIO()
     with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
+        tem_dados = False
         for tabela in ["rdo_diario", "alocacao_equipes", "concretagem", "issues"]:
             df_temp = carregar_dados(tabela)
+            if not df_temp.empty:
+                df_temp.to_excel(writer, sheet_name=tabela, index=False)
+                tem_dados = True
+        if not tem_dados:
+            pd.DataFrame({"Aviso": ["Nenhum registro cadastrado no banco de dados ainda."]}).to_excel(
+                writer, sheet_name="Resumo", index=False
+            )
+
+    st.download_button(
+        label="📥 Baixar Planilha Completa da Obra (Excel)",
+        data=output_excel.getvalue(),
+        file_name="Relatorio_Geral_Jardins_de_Nazare.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
