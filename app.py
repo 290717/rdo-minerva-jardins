@@ -205,14 +205,32 @@ with aba5:
 
     tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(["Histórico RDO", "Mapa de Equipes", "Concretagem", "RNCs Abertas"])
 
-    def exibir_tabela_editavel(nome_tabela, chave_unica):
+   def exibir_tabela_editavel(nome_tabela, chave_unica):
         df_atual = carregar_dados(nome_tabela)
         if not df_atual.empty:
-            df_editado = st.data_editor(df_atual, use_container_width=True, disabled=["id"], key=chave_unica)
+            # Remove linhas totalmente em branco (exceto o id)
+            colunas_dados = [c for c in df_atual.columns if c != "id"]
+            df_atual = df_atual.dropna(how="all", subset=colunas_dados)
+            df_atual = df_atual[~(df_atual[colunas_dados].astype(str).apply(lambda x: x.str.strip() == "").all(axis=1))]
+
+        if not df_atual.empty:
+            # Cria a numeração sequencial limpa (1, 2, 3...) na primeira coluna
+            df_atual = df_atual.reset_index(drop=True)
+            df_atual.insert(0, "Nº", range(1, len(df_atual) + 1))
+
+            df_editado = st.data_editor(
+                df_atual,
+                use_container_width=True,
+                disabled=["Nº", "id"],
+                hide_index=True,
+                column_config={"id": None},  # Esconde o ID real do banco, mantendo-o na memória
+                key=chave_unica
+            )
             if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
                 df_limpo = df_editado.fillna("")
                 for _, row in df_limpo.iterrows():
-                    dados_linha = row.drop("id").to_dict()
+                    # Remove 'Nº' e 'id' antes de enviar a atualização ao Supabase
+                    dados_linha = row.drop(["Nº", "id"]).to_dict()
                     supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
                 st.success("Alterações salvas na nuvem!")
                 st.rerun()
@@ -240,14 +258,23 @@ with aba5:
     )
     df_exclusao = carregar_dados(aba_escolhida)
     if not df_exclusao.empty:
-        opcoes = [
-            f"ID {row['id']} | {row.iloc[1] if len(row) > 1 else ''} - {row.iloc[2] if len(row) > 2 else ''}"
-            for _, row in df_exclusao.iterrows()
-        ]
+        df_exclusao = df_exclusao.reset_index(drop=True)
+        
+        # Mapeia o número visual (1, 2, 3...) para o ID real do Supabase
+        mapa_ids = {}
+        opcoes = []
+        for idx, row in df_exclusao.iterrows():
+            num_visual = idx + 1
+            col1_txt = row.iloc[1] if len(row) > 1 else ""
+            col2_txt = row.iloc[2] if len(row) > 2 else ""
+            rotulo = f"Nº {num_visual} | {col1_txt} - {col2_txt}"
+            opcoes.append(rotulo)
+            mapa_ids[rotulo] = int(row["id"])
+
         selecionado = st.selectbox("Selecione o registro para apagar:", opcoes)
         if st.button("Excluir Registro Selecionado", type="primary"):
-            id_registro = int(selecionado.split(" ")[1])
-            supabase.table(aba_escolhida).delete().eq("id", id_registro).execute()
+            id_real = mapa_ids[selecionado]
+            supabase.table(aba_escolhida).delete().eq("id", id_real).execute()
             st.success("Registro excluído da nuvem!")
             st.rerun()
     else:
