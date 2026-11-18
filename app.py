@@ -112,7 +112,7 @@ with aba2:
     with c3:
         serv = st.selectbox("Serviço Executado", [
             "Alvenaria", "Monocapa", "Contrapiso", "Hidráulica", "Elétrica",
-            "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura"
+            "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura", "Armador"
         ])
         status_serv = st.selectbox("Status", ["Iniciado", "Em Andamento", "Concluído"])
 
