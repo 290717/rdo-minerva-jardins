@@ -83,6 +83,8 @@ with aba1:
         "Cerqueira (Empreiteira)",
         "Saint-Gobain (Monocapa)",
         "Fiscalização / Prefeitura",
+        "Equipe GWF",
+        "Equipe FG",
         "Outros Fornecedores"
     ])
     obs_visitas = st.text_input("Detalhes das visitas (Ex: Técnico da Saint-Gobain validou fachada norte)")
