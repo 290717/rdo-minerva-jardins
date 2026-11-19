@@ -158,15 +158,15 @@ with aba1:
     st.subheader("📄 Gerar Relatório Diário em PDF (Com Fotos)")
 
    fotos_galeria = st.file_uploader(
-        "Anexar fotos do serviço executado (JPG ou PNG):",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True
-    )
+   "Anexar fotos do serviço executado (JPG ou PNG):",
+   type=["jpg", "jpeg", "png"],
+   accept_multiple_files=True
+   )
     foto_camera = st.camera_input("Ou tirar foto na hora pela câmera")
 
     fotos_enviadas = list(fotos_galeria) if fotos_galeria else []
     if foto_camera is not None:
-        fotos_enviadas.append(foto_camera)
+    fotos_enviadas.append(foto_camera)
 
     if st.button("Preparar PDF do Último RDO"):
         df_rdo_atual = carregar_dados("rdo_diario")
