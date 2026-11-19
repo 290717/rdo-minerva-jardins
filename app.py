@@ -157,11 +157,11 @@ with aba1:
     st.divider()
     st.subheader("📄 Gerar Relatório Diário em PDF (Com Fotos)")
 
-   fotos_galeria = st.file_uploader(
-   "Anexar fotos do serviço executado (JPG ou PNG):",
-   type=["jpg", "jpeg", "png"],
-   accept_multiple_files=True
-   )
+    fotos_galeria = st.file_uploader(
+    "Anexar fotos do serviço executado (JPG ou PNG):",
+    type=["jpg", "jpeg", "png"],
+    accept_multiple_files=True
+    )
     foto_camera = st.camera_input("Ou tirar foto na hora pela câmera")
 
     fotos_enviadas = list(fotos_galeria) if fotos_galeria else []
