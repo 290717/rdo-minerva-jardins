@@ -166,7 +166,7 @@ with aba1:
 
     fotos_enviadas = list(fotos_galeria) if fotos_galeria else []
     if foto_camera is not None:
-    fotos_enviadas.append(foto_camera)
+     fotos_enviadas.append(foto_camera)
 
     if st.button("Preparar PDF do Último RDO"):
         df_rdo_atual = carregar_dados("rdo_diario")
