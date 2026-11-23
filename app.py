@@ -322,9 +322,9 @@ elif pagina == "📌 RNC (Qualidade)":
             st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
 
 # ==========================================
-# ABA 5: PAINEL DO COORDENADOR (VISUALIZAÇÃO)
+# ABA 5:COORDENADOR GERAL(VISUALIZAÇÃO)
 # ==========================================
-elif pagina == "📊 Painel do Coordenador":
+elif pagina == "📊Coordenador Geral":
     st.subheader("📊 Visão Gerencial em Tempo Real")
     st.info("Dados sincronizados na nuvem. Dê dois cliques em qualquer célula para editar e clique em Salvar.")
 
