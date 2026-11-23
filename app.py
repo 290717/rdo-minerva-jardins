@@ -96,7 +96,8 @@ col_titulo, col_imagem = st.columns([3, 1.5], vertical_alignment="center")
 
 with col_titulo:
     st.title("RDO Digital/Gestão de Campo")
-    st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
+    st.markdown("Obra: Jardins de Nazaré | Construtora Minerva |
+     Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
 
 with col_imagem:
     st.image("predio Nazaré.jpg", use_container_width=True)   # Ajuste o valor de 'width' para aumentar ou diminuir
@@ -161,31 +162,17 @@ with aba1:
             st.success("✅ RDO salvo na nuvem com sucesso!")
 
     # --- GERADOR DE PDF COM FOTOS NA ABA 1 ---
-    st.divider()
-    st.subheader("📄 Gerar Relatório Diário em PDF (Com Fotos)")
+  # --- CABEÇALHO DO SISTEMA ---
+col_titulo, col_imagem = st.columns([4, 1], vertical_alignment="center")
 
-    fotos_galeria = st.file_uploader(
-        "Anexar fotos do serviço executado (JPG ou PNG):",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True
-    )
-    foto_camera = st.camera_input("Ou tirar foto na hora pela câmera")
+with col_titulo:
+    st.title("🏗️ RDO Digital/Gestão de Campo")
+    st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
 
-    fotos_enviadas = list(fotos_galeria) if fotos_galeria else []
-    if foto_camera is not None:
-        fotos_enviadas.append(foto_camera)
+with col_imagem:
+    st.image("predio.jpg", width=150)  # Ajuste o valor de 'width' para aumentar ou diminuir
 
-    if st.button("Preparar PDF do Último RDO"):
-        df_rdo_atual = carregar_dados("rdo_diario")
-        pdf_pronto = criar_pdf_rdo(df_rdo_atual, fotos_enviadas)
-
-        st.success("PDF gerado com sucesso! Clique abaixo para baixar.")
-        st.download_button(
-            label="📥 Baixar Relatório RDO em PDF",
-            data=pdf_pronto,
-            file_name=f"RDO_Minerva_Jardins_{datetime.today().strftime('%Y%m%d')}.pdf",
-            mime="application/pdf"
-        )
+st.divider()
         # ==========================================
 # ABA 2: ALOCAÇÃO DE EQUIPES POR APARTAMENTO
 # ==========================================
