@@ -241,7 +241,7 @@ elif pagina == "👷 Equipes / Apartamentos":
     with c3:
         serv = st.selectbox("Serviço Executado", (
             "Alvenaria", "Monocapa", "Contrapiso", "Hidráulica", "Elétrica",
-            "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura", "Armador"
+            "Impermeabilização", "Gesso", "Drywall", "Carpintaria","Cremalheira", "Pintura", "Armador"
         ))
         status_serv = st.selectbox("Status", ("Iniciado", "Em Andamento", "Concluído"))
 
@@ -276,7 +276,7 @@ elif pagina == "🚛 Concretagem":
 
     status_conc = st.radio("Status do Recebimento", ("Aprovado", "Aprovado com Aditivo", "Recusado"), horizontal=True)
 
-  if st.button("Salvar Caminhão de Concreto"):
+    if st.button("Salvar Caminhão de Concreto"):
         ok = salvar_dados({
             "data": datetime.today().strftime("%d/%m/%Y"),
             "concreteira": concreteira,
