@@ -160,18 +160,7 @@ with aba1:
         if ok:
             st.success("✅ RDO salvo na nuvem com sucesso!")
 
-    # --- GERADOR DE PDF COM FOTOS NA ABA 1 ---
-  # --- CABEÇALHO DO SISTEMA ---
-col_titulo, col_imagem = st.columns([4, 1], vertical_alignment="center")
-
-with col_titulo:
-    st.title("🏗️ RDO Digital/Gestão de Campo")
-    st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
-
-with col_imagem:
-    st.image("predio Nazaré.jpg", width=150)  # Ajuste o valor de 'width' para aumentar ou diminuir
-
-st.divider()
+   
         # ==========================================
 # ABA 2: ALOCAÇÃO DE EQUIPES POR APARTAMENTO
 # ==========================================
