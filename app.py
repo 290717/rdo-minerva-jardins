@@ -91,17 +91,24 @@ def criar_pdf_rdo(df_dados, lista_fotos):
 
 
 # --- CABEÇALHO DO SISTEMA ---
-st.title("🏗️ RDO Digital/Gestão de Campo")
-st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
-st.divider()
+# --- CABEÇALHO DO SISTEMA ---
+col_titulo, col_imagem = st.columns([4, 1], vertical_alignment="center")
 
+with col_titulo:
+    st.title("🏗️ RDO Digital/Gestão de Campo")
+    st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
+
+with col_imagem:
+    st.image("predio Nazaré.jpg", width=150)  # Ajuste o valor de 'width' para aumentar ou diminuir
+
+st.divider()
 # --- MENU DE ABAS ---
 aba1, aba2, aba3, aba4, aba5 = st.tabs((
     "📋 RDO/Clima",
     "👷 Equipes/Apartamentos",
     "🚛 Concretagem",
     "📌 RNC (Qualidade)",
-    "📊 Painel do Coordenador"
+    "📊 Coordenador Geral"
 ))
 
 # ==========================================
@@ -157,16 +164,16 @@ with aba1:
     st.divider()
     st.subheader("📄 Gerar Relatório Diário em PDF (Com Fotos)")
 
-    fotos_galeria = st.file_uploader(
-    "Anexar fotos do serviço executado (JPG ou PNG):",
-    type=["jpg", "jpeg", "png"],
-    accept_multiple_files=True
+   fotos_galeria = st.file_uploader(
+        "Anexar fotos do serviço executado (JPG ou PNG):",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=True
     )
     foto_camera = st.camera_input("Ou tirar foto na hora pela câmera")
 
     fotos_enviadas = list(fotos_galeria) if fotos_galeria else []
     if foto_camera is not None:
-     fotos_enviadas.append(foto_camera)
+        fotos_enviadas.append(foto_camera)
 
     if st.button("Preparar PDF do Último RDO"):
         df_rdo_atual = carregar_dados("rdo_diario")
@@ -197,7 +204,7 @@ with aba2:
         apto = st.text_input("Apartamento ou Local (Ex: Apto 102, Hall)")
     with c3:
         serv = st.selectbox("Serviço Executado", (
-            "Alvenaria", "Monocapa", "Contrapiso", "Hidráulica", "Elétrica",
+            "Alvenaria", "Monocapa", "Contrapiso", "Hidráulica", "Elétrica", "Cremalheira",
             "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura", "Armador"
         ))
         status_serv = st.selectbox("Status", ("Iniciado", "Em Andamento", "Concluído"))
