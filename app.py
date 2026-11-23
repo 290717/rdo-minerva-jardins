@@ -92,14 +92,14 @@ def criar_pdf_rdo(df_dados, lista_fotos):
 
 # --- CABEÇALHO DO SISTEMA ---
 # --- CABEÇALHO DO SISTEMA ---
-col_titulo, col_imagem = st.columns([4, 1], vertical_alignment="center")
+col_titulo, col_imagem = st.columns([3, 1.5], vertical_alignment="center")
 
 with col_titulo:
-    st.title("🏗️ RDO Digital/Gestão de Campo")
+    st.title("RDO Digital/Gestão de Campo")
     st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
 
 with col_imagem:
-    st.image("predio Nazaré.jpg", width=150)  # Ajuste o valor de 'width' para aumentar ou diminuir
+    st.image("predio Nazaré.jpg", use_container_width=True)   # Ajuste o valor de 'width' para aumentar ou diminuir
 
 st.divider()
 # --- MENU DE ABAS ---
