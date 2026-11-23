@@ -169,7 +169,7 @@ with col_titulo:
     st.markdown("Obra: Jardins de Nazaré | Construtora Minerva | Engenharia 4.0 - 👷🏽‍♀️Sara Elienai")
 
 with col_imagem:
-    st.image("predio.jpg", width=150)  # Ajuste o valor de 'width' para aumentar ou diminuir
+    st.image("predio Nazaré.jpg", width=150)  # Ajuste o valor de 'width' para aumentar ou diminuir
 
 st.divider()
         # ==========================================
