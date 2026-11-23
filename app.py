@@ -103,14 +103,56 @@ with col_imagem:
 
 st.divider()
 # --- MENU DE ABAS ---
-aba1, aba2, aba3, aba4, aba5 = st.tabs((
-    "📋 RDO/Clima",
-    "👷 Equipes/Apartamentos",
-    "🚛 Concretagem",
-    "📌 RNC (Qualidade)",
-    "📊 Coordenador Geral"
-))
+# --- BARRA LATERAL (MENU DE NAVEGAÇÃO) ---
+with st.sidebar:
+    st.image("predio Nazaré.jpg", use_container_width=True)
+    st.markdown("### Construtora Minerva")
+    st.caption("Obra: Jardins de Nazaré")
+    st.divider()
 
+    pagina = st.sidebar.radio(
+        "Navegação",
+        (
+            "📋 RDO / Clima",
+            "👷 Equipes / Apartamentos",
+            "🚛 Concretagem",
+            "📌 RNC (Qualidade)",
+            "📊 Painel do Coordenador"
+        ),
+        label_visibility="collapsed"
+    )
+
+    st.divider()
+    st.caption("Engenharia 4.0 - 👷🏽‍♀️ Sara Elienai")
+
+# --- CABEÇALHO PRINCIPAL ---
+st.title("🏗️ RDO Digital / Gestão de Campo")
+st.divider()
+
+# --- CONTEÚDO DE CADA PÁGINA ---
+if pagina == "📋 RDO / Clima":
+    # Cole aqui todo o código que estava dentro de 'with aba1:'
+    st.subheader("Registro Diário de Obra")
+    ...
+
+elif pagina == "👷 Equipes / Apartamentos":
+    # Cole aqui todo o código que estava dentro de 'with aba2:'
+    st.subheader("Rastreabilidade de Equipes por Pavimento/Unidade")
+    ...
+
+elif pagina == "🚛 Concretagem":
+    # Cole aqui todo o código que estava dentro de 'with aba3:'
+    st.subheader("Recebimento de Concreto Usinado")
+    ...
+
+elif pagina == "📌 RNC (Qualidade)":
+    # Cole aqui todo o código que estava dentro de 'with aba4:'
+    st.subheader("Registro de Não Conformidade (RNC)")
+    ...
+
+elif pagina == "📊 Coordenador Geral":
+    # Cole aqui todo o código que estava dentro de 'with aba5:'
+    st.subheader("📊 Visão Gerencial em Tempo Real")
 # ==========================================
 # ABA 1: RDO DIÁRIO E CLIMA REAL + PDF/FOTOS
 # ==========================================
