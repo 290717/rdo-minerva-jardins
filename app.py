@@ -123,7 +123,7 @@ with st.sidebar:
             "👷 Equipes / Apartamentos",
             "🚛 Concretagem",
             "📌 RNC (Qualidade)",
-            "📊 Painel do Coordenador"
+            "📊 Coordenador Geral"
         ),
         label_visibility="collapsed"
     )
@@ -276,62 +276,154 @@ elif pagina == "🚛 Concretagem":
 
     status_conc = st.radio("Status do Recebimento", ("Aprovado", "Aprovado com Aditivo", "Recusado"), horizontal=True)
 
-    if st.button("Salvar Caminhão de Concreto"):
+  if st.button("Salvar Caminhão de Concreto"):
         ok = salvar_dados({
-# --- BLOCO DE EXCLUSÃO ---
-st.divider()
-st.subheader("Excluir Registro")
-aba_escolhida = st.selectbox(
-"Escolha a categoria:",
-("rdo_diario", "alocacao_equipes", "concretagem", "issues")
-)
-df_exclusao = carregar_dados(aba_escolhida)
-if not df_exclusao.empty:
-df_exclusao = df_exclusao.reset_index(drop=True)
-mapa_ids = {}
-opcoes = []
-for idx, row in df_exclusao.iterrows():
-num_visual = idx + 1
-valores = list(row.drop("id", errors="ignore").values)
-it = iter(valores)
-col1_txt = next(it, "")
-col2_txt = next(it, "")
-rotulo = f"Nº {num_visual} | {col1_txt} - {col2_txt}"
-opcoes.append(rotulo)
-mapa_ids[rotulo] = int(row["id"])
-selecionado = st.selectbox("Selecione o registro para apagar:", opcoes)
-if st.button("Excluir Registro Selecionado", type="primary"):
-id_real = mapa_ids[selecionado]
-supabase.table(aba_escolhida).delete().eq("id", id_real).execute()
-st.success("Registro excluído da nuvem!")
-st.rerun()
-else:
-st.info("Nenhum registro cadastrado nesta categoria.")
-# --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
-st.divider()
-output_excel = io.BytesIO()
-with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
-tem_dados = False
-tabelas = {
-"RDO_Diario": "rdo_diario",
-"Equipes": "alocacao_equipes",
-"Concretagem": "concretagem",
-"RNC_Qualidade": "issues"
-}
-for aba_excel, nome_tab in tabelas.items():
-df_exp = carregar_dados(nome_tab)
-if not df_exp.empty:
-df_exp = df_exp.drop(columns="id", errors="ignore").reset_index(drop=True)
-df_exp.insert(0, "Nº", range(1, len(df_exp) + 1))
-df_exp.to_excel(writer, sheet_name=aba_excel, index=False)
-tem_dados = True
-if not tem_dados:
-pd.DataFrame({"Aviso": ("Nenhum dado cadastrado ainda.",)}).to_excel(
-writer, sheet_name="Sem_Dados", index=False
-)
-st.download_button(
-label="📥 Baixar Planilha Excel Completa (.xlsx)",
-data=output_excel.getvalue(),
-file_name=f"RDO_Minerva_{datetime.today().strftime('%Y%m%d')}.xlsx",
-mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+            "data": datetime.today().strftime("%d/%m/%Y"),
+            "concreteira": concreteira,
+            "nf": nf,
+            "peca": peca,
+            "fck": int(fck),
+            "volume_m3": float(vol_m3),
+            "slump_cm": int(slump),
+            "status": status_conc
+        }, "concretagem")
+        if ok:
+            st.success(f"✅ Caminhão NF {nf} ({vol_m3} m³) registrado!")
+
+# ==========================================
+# ABA 4: RNC (CONTROLE DE QUALIDADE)
+# ==========================================
+elif pagina == "📌 RNC (Qualidade)":
+    st.subheader("Registro de Não Conformidade (RNC)")
+    ci1, ci2 = st.columns(2)
+    with ci1:
+        local_issue = st.text_input("Local da Não Conformidade (Ex: Pilar P14 - Térreo)")
+        disc_issue = st.selectbox("Disciplina", (
+            "Estrutura", "Alvenaria", "Monocapa / Fachada", "Instalações",
+            "Drywall", "Carpintaria", "Contrapiso", "Hidraulica", "Elétrica", "Segurança do Trabalho"
+        ))
+    with ci2:
+        resp_issue = st.selectbox("Responsável pela Correção", ("Mestre de Obras", "Cerqueira", "Saint-Gobain", "Equipe Minerva"))
+        prazo_issue = st.date_input("Prazo Limite para Correção")
+
+    desc_issue = st.text_area("Descrição detalhada do problema")
+
+    if st.button("Abrir RNC de Qualidade"):
+        ok = salvar_dados({
+            "data_abertura": datetime.today().strftime("%d/%m/%Y"),
+            "local": local_issue,
+            "disciplina": disc_issue,
+            "descricao": desc_issue,
+            "responsavel": resp_issue,
+            "prazo": prazo_issue.strftime("%d/%m/%Y"),
+            "status": "Aberto"
+        }, "issues")
+        if ok:
+            st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
+
+# ==========================================
+# ABA 5: PAINEL DO COORDENADOR (VISUALIZAÇÃO)
+# ==========================================
+elif pagina == "📊 Painel do Coordenador":
+    st.subheader("📊 Visão Gerencial em Tempo Real")
+    st.info("Dados sincronizados na nuvem. Dê dois cliques em qualquer célula para editar e clique em Salvar.")
+
+    tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(("Histórico RDO", "Mapa de Equipes", "Concretagem", "RNCs Abertas"))
+
+    def exibir_tabela_editavel(nome_tabela, chave_unica):
+        df_atual = carregar_dados(nome_tabela)
+        if not df_atual.empty:
+            df_atual = df_atual.reset_index(drop=True)
+            df_atual.insert(0, "Nº", range(1, len(df_atual) + 1))
+
+            df_editado = st.data_editor(
+                df_atual,
+                use_container_width=True,
+                disabled=("Nº", "id"),
+                hide_index=True,
+                column_config={"id": None},
+                key=chave_unica
+            )
+            if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
+                df_limpo = df_editado.fillna("")
+                for _, row in df_limpo.iterrows():
+                    dados_linha = {k: v for k, v in row.items() if k not in ("Nº", "id")}
+                    supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
+                st.success("Alterações salvas na nuvem!")
+                st.rerun()
+        else:
+            st.info("Nenhum registro cadastrado nesta aba ainda.")
+
+    with tab_v1:
+        exibir_tabela_editavel("rdo_diario", "edit_rdo")
+    with tab_v2:
+        exibir_tabela_editavel("alocacao_equipes", "edit_equipes")
+    with tab_v3:
+        df_c = carregar_dados("concretagem")
+        if not df_c.empty and "volume_m3" in df_c.columns:
+            st.metric("Volume Total Concretado (m³)", f"{pd.to_numeric(df_c['volume_m3'], errors='coerce').sum():.2f} m³")
+        exibir_tabela_editavel("concretagem", "edit_concreto")
+    with tab_v4:
+        exibir_tabela_editavel("issues", "edit_issues")
+
+    # --- BLOCO DE EXCLUSÃO ---
+    st.divider()
+    st.subheader("Excluir Registro")
+    aba_escolhida = st.selectbox(
+        "Escolha a categoria:",
+        ("rdo_diario", "alocacao_equipes", "concretagem", "issues")
+    )
+    df_exclusao = carregar_dados(aba_escolhida)
+    if not df_exclusao.empty:
+        df_exclusao = df_exclusao.reset_index(drop=True)
+        mapa_ids = {}
+        opcoes = list()
+        for idx, row in df_exclusao.iterrows():
+            num_visual = idx + 1
+            valores = list(row.drop("id", errors="ignore").values)
+            it = iter(valores)
+            col1_txt = next(it, "")
+            col2_txt = next(it, "")
+            rotulo = f"Nº {num_visual} | {col1_txt} - {col2_txt}"
+            opcoes.append(rotulo)
+            mapa_ids[rotulo] = int(row["id"])
+
+        selecionado = st.selectbox("Selecione o registro para apagar:", opcoes)
+        if st.button("Excluir Registro Selecionado", type="primary"):
+            id_real = mapa_ids[selecionado]
+            supabase.table(aba_escolhida).delete().eq("id", id_real).execute()
+            st.success("Registro excluído da nuvem!")
+            st.rerun()
+    else:
+        st.info("Nenhum registro cadastrado nesta categoria.")
+
+    # --- BOTÃO PARA BAIXAR PLANILHA EXCEL COMPLETA ---
+    st.divider()
+    output_excel = io.BytesIO()
+    with pd.ExcelWriter(output_excel, engine="openpyxl") as writer:
+        tem_dados = False
+        tabelas = {
+            "RDO_Diario": "rdo_diario",
+            "Equipes": "alocacao_equipes",
+            "Concretagem": "concretagem",
+            "RNC_Qualidade": "issues"
+        }
+        for aba_excel, nome_tab in tabelas.items():
+            df_exp = carregar_dados(nome_tab)
+            if not df_exp.empty:
+                df_exp = df_exp.drop(columns="id", errors="ignore").reset_index(drop=True)
+                df_exp.insert(0, "Nº", range(1, len(df_exp) + 1))
+                df_exp.to_excel(writer, sheet_name=aba_excel, index=False)
+                tem_dados = True
+
+        if not tem_dados:
+            pd.DataFrame({"Aviso": ("Nenhum dado cadastrado ainda.",)}).to_excel(
+                writer, sheet_name="Sem_Dados", index=False
+            )
+
+    st.download_button(
+        label="📥 Baixar Planilha Excel Completa (.xlsx)",
+        data=output_excel.getvalue(),
+        file_name=f"RDO_Minerva_{datetime.today().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
