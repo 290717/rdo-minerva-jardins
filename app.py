@@ -130,202 +130,43 @@ st.title("🏗️ RDO Digital / Gestão de Campo")
 st.divider()
 
 # --- CONTEÚDO DE CADA PÁGINA ---
-if pagina == "📋 RDO / Clima":
-    # Cole aqui todo o código que estava dentro de 'with aba1:'
-    st.subheader("Registro Diário de Obra")
-    ...
+# --- CONTEÚDO DE CADA PÁGINA ---
 
-elif pagina == "👷 Equipes / Apartamentos":
-    # Cole aqui todo o código que estava dentro de 'with aba2:'
-    st.subheader("Rastreabilidade de Equipes por Pavimento/Unidade")
-    ...
-
-elif pagina == "🚛 Concretagem":
-    # Cole aqui todo o código que estava dentro de 'with aba3:'
-    st.subheader("Recebimento de Concreto Usinado")
-    ...
-
-elif pagina == "📌 RNC (Qualidade)":
-    # Cole aqui todo o código que estava dentro de 'with aba4:'
-    st.subheader("Registro de Não Conformidade (RNC)")
-    ...
-
-elif pagina == "📊 Coordenador Geral":
-    # Cole aqui todo o código que estava dentro de 'with aba5:'
-    st.subheader("📊 Visão Gerencial em Tempo Real")
 # ==========================================
 # ABA 1: RDO DIÁRIO E CLIMA REAL + PDF/FOTOS
 # ==========================================
-with aba1:
+if pagina == "📋 RDO / Clima":
     st.subheader("Registro Diário de Obra")
     col1, col2, col3 = st.columns(3)
-    with col1:
-        data_rdo = st.date_input("Data", datetime.today())
-    with col2:
-        clima_m = st.selectbox("Clima Manhã (Real)", ("Bom / Sol", "Nublado", "Chuva Fraca", "Chuva Forte"))
-    with col3:
-        clima_t = st.selectbox("Clima Tarde (Real)", ("Bom / Sol", "Nublado", "Chuva Fraca", "Chuva Forte"))
+    # ... restante do código da aba 1 continua indentado aqui dentro ...
 
-    condicao = st.radio(
-        "Condição de Trabalho no Canteiro",
-        ("Praticável", "Parcialmente Impraticável", "Totalmente Impraticável"),
-        horizontal=True
-    )
-
-    horas_chuva = 0.0
-    if "Chuva" in clima_m or "Chuva" in clima_t:
-        horas_chuva = st.number_input("Quantas horas a obra ficou parada por chuva?", min_value=0.0, max_value=12.0, step=0.5)
-
-    empresas = st.multiselect("Empresas / Visitas Técnicas Presentes", (
-        "Equipe Própria Minerva",
-        "Cerqueira (Empreiteira)",
-        "Saint-Gobain (Monocapa)",
-        "Fiscalização / Prefeitura",
-        "Equipe GWF",
-        "Equipe FG",
-        "Outros Fornecedores"
-    ))
-    obs_visitas = st.text_input("Detalhes das visitas (Ex: Técnico da Saint-Gobain validou fachada norte)")
-    atividades = st.text_area("Resumo das Atividades Executadas Hoje")
-
-    if st.button("Salvar RDO do Dia", type="primary"):
-        ok = salvar_dados({
-            "data": data_rdo.strftime("%d/%m/%Y"),
-            "clima_manha": clima_m,
-            "clima_tarde": clima_t,
-            "condicao": condicao,
-            "horas_paradas": float(horas_chuva),
-            "terceiros": ", ".join(empresas),
-            "obs_visitas": obs_visitas,
-            "atividades": atividades
-        }, "rdo_diario")
-        if ok:
-            st.success("✅ RDO salvo na nuvem com sucesso!")
-
-   
-        # ==========================================
+# ==========================================
 # ABA 2: ALOCAÇÃO DE EQUIPES POR APARTAMENTO
 # ==========================================
-with aba2:
+elif pagina == "👷 Equipes / Apartamentos":
     st.subheader("Rastreabilidade de Equipes por Pavimento/Unidade")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        colab = st.text_input("Nome do Colaborador ou Líder de Equipe")
-        emp_colab = st.selectbox("Empresa", ("Construtora Minerva", "Cerqueira", "Saint-Gobain-Monocapa", "DWG Hidraulica", "FG Elétrica", "Outra"))
-    with c2:
-        pav = st.selectbox("Pavimento", (
-            "Subsolo", "Térreo", "1º Pavimento", "2º Pavimento", "3º Pavimento",
-            "4º Pavimento", "5º Pavimento", "6º Pavimento", "7º Pavimento",
-            "8º Pavimento", "9º Pavimento", "Cobertura", "Fachada", "Muro"
-        ))
-        apto = st.text_input("Apartamento ou Local (Ex: Apto 102, Hall)")
-    with c3:
-        serv = st.selectbox("Serviço Executado", (
-            "Alvenaria", "Monocapa", "Contrapiso", "Hidráulica", "Elétrica", "Cremalheira",
-            "Impermeabilização", "Gesso", "Drywall", "Carpintaria", "Pintura", "Armador"
-        ))
-        status_serv = st.selectbox("Status", ("Iniciado", "Em Andamento", "Concluído"))
-
-    if st.button("Registrar Alocação de Equipe"):
-        ok = salvar_dados({
-            "data": datetime.today().strftime("%d/%m/%Y"),
-            "colaborador": colab,
-            "empresa": emp_colab,
-            "pavimento": pav,
-            "unidade": apto,
-            "servico": serv,
-            "status": status_serv
-        }, "alocacao_equipes")
-        if ok:
-            st.success(f"✅ {colab} registrado no {pav} ({apto})!")
+    # ... restante do código da aba 2 continua indentado aqui dentro ...
 
 # ==========================================
 # ABA 3: CONTROLE DE CONCRETAGEM
 # ==========================================
-with aba3:
+elif pagina == "🚛 Concretagem":
     st.subheader("Recebimento de Concreto Usinado")
-    cc1, cc2, cc3 = st.columns(3)
-    with cc1:
-        concreteira = st.text_input("Concreteira (Ex: Polimix, Votorantim)")
-        nf = st.text_input("Número da Nota Fiscal / Ticket")
-    with cc2:
-        peca = st.text_input("Peça Concretada (Ex: Pilares 2º Pav)")
-        fck = st.selectbox("FCK de Projeto (MPa)", (20, 25, 30, 35, 40))
-    with cc3:
-        vol_m3 = st.number_input("Volume (m³)", min_value=0.5, step=0.5)
-        slump = st.number_input("Slump Obtido na Obra (cm)", min_value=1, max_value=30, value=12)
-
-    status_conc = st.radio("Status do Recebimento", ("Aprovado", "Aprovado com Aditivo", "Recusado"), horizontal=True)
-
-    if st.button("Salvar Caminhão de Concreto"):
-        ok = salvar_dados({
-            "data": datetime.today().strftime("%d/%m/%Y"),
-            "concreteira": concreteira,
-            "nf": nf,
-            "peca": peca,
-            "fck": int(fck),
-            "volume_m3": float(vol_m3),
-            "slump_cm": int(slump),
-            "status": status_conc
-        }, "concretagem")
-        if ok:
-            st.success(f"✅ Caminhão NF {nf} ({vol_m3} m³) registrado!")
+    # ... restante do código da aba 3 continua indentado aqui dentro ...
 
 # ==========================================
 # ABA 4: RNC (CONTROLE DE QUALIDADE)
 # ==========================================
-with aba4:
+elif pagina == "📌 RNC (Qualidade)":
     st.subheader("Registro de Não Conformidade (RNC)")
-    ci1, ci2 = st.columns(2)
-    with ci1:
-        local_issue = st.text_input("Local da Não Conformidade (Ex: Pilar P14 - Térreo)")
-        disc_issue = st.selectbox("Disciplina", (
-            "Estrutura", "Alvenaria", "Monocapa / Fachada", "Instalações",
-            "Drywall", "Carpintaria", "Contrapiso", "Hidraulica", "Elétrica", "Segurança do Trabalho"
-        ))
-    with ci2:
-        resp_issue = st.selectbox("Responsável pela Correção", ("Mestre de Obras", "Cerqueira", "Saint-Gobain", "Equipe Minerva"))
-        prazo_issue = st.date_input("Prazo Limite para Correção")
-
-    desc_issue = st.text_area("Descrição detalhada do problema")
-
-    if st.button("Abrir RNC de Qualidade"):
-        ok = salvar_dados({
-            "data_abertura": datetime.today().strftime("%d/%m/%Y"),
-            "local": local_issue,
-            "disciplina": disc_issue,
-            "descricao": desc_issue,
-            "responsavel": resp_issue,
-            "prazo": prazo_issue.strftime("%d/%m/%Y"),
-            "status": "Aberto"
-        }, "issues")
-        if ok:
-            st.warning(f"📌 RNC aberta e atribuída para: {resp_issue}")
+    # ... restante do código da aba 4 continua indentado aqui dentro ...
 
 # ==========================================
 # ABA 5: PAINEL DO COORDENADOR (VISUALIZAÇÃO)
 # ==========================================
-with aba5:
-    st.subheader("📊 Visão Gerencial em Tempo Real")
-    st.info("Dados sincronizados na nuvem. Dê dois cliques em qualquer célula para editar e clique em Salvar.")
-
-    tab_v1, tab_v2, tab_v3, tab_v4 = st.tabs(("Histórico RDO", "Mapa de Equipes", "Concretagem", "RNCs Abertas"))
-
-    def exibir_tabela_editavel(nome_tabela, chave_unica):
-        df_atual = carregar_dados(nome_tabela)
-        if not df_atual.empty:
-            df_atual = df_atual.reset_index(drop=True)
-            df_atual.insert(0, "Nº", range(1, len(df_atual) + 1))
-
-            df_editado = st.data_editor(
-                df_atual,
-                use_container_width=True,
-                disabled=("Nº", "id"),
-                hide_index=True,
-                column_config={"id": None},
-                key=chave_unica
-            )
-            if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
+elif pagina == "Coordenador Geral":
+    st.subheader("Visão Gerencial em Tempo Real")
+    # ... restante do código da aba 5 continua indentado aqui dentro ...            if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
                 df_limpo = df_editado.fillna("")
                 for _, row in df_limpo.iterrows():
                     dados_linha = {k: v for k, v in row.items() if k not in ("Nº", "id")}
