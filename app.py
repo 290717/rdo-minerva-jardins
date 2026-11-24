@@ -325,7 +325,7 @@ elif pagina == "📌 RNC (Qualidade)":
 # ==========================================
 # ABA 5:COORDENADOR GERAL(VISUALIZAÇÃO)
 # ==========================================
-elif pagina == "📊Coordenador Geral":
+elif pagina == "📊 Coordenador Geral":
     st.subheader("📊 Visão Gerencial em Tempo Real")
     st.info("Dados sincronizados na nuvem. Dê dois cliques em qualquer célula para editar e clique em Salvar.")
 
