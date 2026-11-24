@@ -334,27 +334,54 @@ elif pagina == "📊 Coordenador Geral":
     def exibir_tabela_editavel(nome_tabela, chave_unica):
         df_atual = carregar_dados(nome_tabela)
         if not df_atual.empty:
-            df_atual = df_atual.reset_index(drop=True)
-            df_atual.insert(0, "Nº", range(1, len(df_atual) + 1))
+            col_data = "data" if "data" in df_atual.columns else ("data_abertura" if "data_abertura" in df_atual.columns else None)
 
-            df_editado = st.data_editor(
-                df_atual,
-                use_container_width=True,
-                disabled=("Nº", "id"),
-                hide_index=True,
-                column_config={"id": None},
-                key=chave_unica
-            )
-            if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
-                df_limpo = df_editado.fillna("")
-                for _, row in df_limpo.iterrows():
-                    dados_linha = {k: v for k, v in row.items() if k not in ("Nº", "id")}
-                    supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
-                st.success("Alterações salvas na nuvem!")
-                st.rerun()
+            if col_data:
+                df_atual["_dt_sort"] = pd.to_datetime(df_atual[col_data], format="%d/%m/%Y", errors="coerce")
+                df_atual = df_atual.sort_values(by=["_dt_sort", "id"], ascending=[False, False]).drop(columns=["_dt_sort"])
+                datas_unicas = df_atual[col_data].dropna().unique()
+
+                for data_dia in datas_unicas:
+                    df_dia = df_atual[df_atual[col_data] == data_dia].reset_index(drop=True)
+                    df_dia.insert(0, "Nº", range(1, len(df_dia) + 1))
+
+                    with st.expander(f"📅 {data_dia} ({len(df_dia)} registro(s))", expanded=False):
+                        chave_dia = f"{chave_unica}{str(data_dia).replace('/', '')}"
+                        df_editado = st.data_editor(
+                            df_dia,
+                            use_container_width=True,
+                            disabled=("Nº", "id"),
+                            hide_index=True,
+                            column_config={"id": None},
+                            key=chave_dia
+                        )
+                        if st.button(f"💾 Salvar alterações ({data_dia})", key=f"btn_{chave_dia}"):
+                            df_limpo = df_editado.fillna("")
+                            for _, row in df_limpo.iterrows():
+                                dados_linha = {k: v for k, v in row.items() if k not in ("Nº", "id")}
+                                supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
+                            st.success(f"Alterações do dia {data_dia} salvas na nuvem!")
+                            st.rerun()
+            else:
+                df_atual = df_atual.reset_index(drop=True)
+                df_atual.insert(0, "Nº", range(1, len(df_atual) + 1))
+                df_editado = st.data_editor(
+                    df_atual,
+                    use_container_width=True,
+                    disabled=("Nº", "id"),
+                    hide_index=True,
+                    column_config={"id": None},
+                    key=chave_unica
+                )
+                if st.button(f"💾 Salvar alterações em {nome_tabela}", key=f"btn_{chave_unica}"):
+                    df_limpo = df_editado.fillna("")
+                    for _, row in df_limpo.iterrows():
+                        dados_linha = {k: v for k, v in row.items() if k not in ("Nº", "id")}
+                        supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
+                    st.success("Alterações salvas na nuvem!")
+                    st.rerun()
         else:
             st.info("Nenhum registro cadastrado nesta aba ainda.")
-
     with tab_v1:
         exibir_tabela_editavel("rdo_diario", "edit_rdo")
     with tab_v2:
