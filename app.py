@@ -54,7 +54,8 @@ def carregar_dados(nome_tabela):
             df = df.dropna(how="all", subset=colunas_dados)
             df = df[~(df[colunas_dados].astype(str).apply(lambda x: x.str.strip() == "").all(axis=1))]
         return df
-    except Exception:
+    except Exception as e:
+        st.error(f"Erro ao carregar dados da tabela ({nome_tabela}): {e}")
         return pd.DataFrame()
 
 
