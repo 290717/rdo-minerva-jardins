@@ -356,7 +356,7 @@ elif pagina == "📊 Coordenador Geral":
                             key=chave_dia
                         )
                         if st.button(f"💾 Salvar alterações ({data_dia})", key=f"btn_{chave_dia}"):
-                          df_limpo = df_editado.replace({"": None}).where(pd.notnull(df_editado), None)
+                           df_limpo = df_editado.replace({"": None}).where(pd.notnull(df_editado), None)
                            for _, row in df_limpo.iterrows():
                             dados_linha = {}
                             for k, v in row.items():
