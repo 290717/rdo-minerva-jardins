@@ -356,12 +356,16 @@ elif pagina == "📊 Coordenador Geral":
                             key=chave_dia
                         )
                         if st.button(f"💾 Salvar alterações ({data_dia})", key=f"btn_{chave_dia}"):
-                            df_limpo = df_editado.fillna("")
-                            for _, row in df_limpo.iterrows():
-                                dados_linha = {k: v for k, v in row.items() if k not in ("Nº", "id")}
-                                supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
-                            st.success(f"Alterações do dia {data_dia} salvas na nuvem!")
-                            st.rerun()
+        df_limpo = df_editado.replace({"": None}).where(pd.notnull(df_editado), None)
+        for _, row in df_limpo.iterrows():
+            dados_linha = {}
+            for k, v in row.items():
+                if k not in ("Nº", "id"):
+                    # Converte datas/timestamps para string, mantendo None quando vazio
+                    dados_linha[k] = str(v) if hasattr(v, "strftime") else v
+            supabase.table(nome_tabela).update(dados_linha).eq("id", int(row["id"])).execute()
+        st.success(f"Alterações do dia {data_dia} salvas na nuvem!")
+        st.rerun()
             else:
                 df_atual = df_atual.reset_index(drop=True)
                 df_atual.insert(0, "Nº", range(1, len(df_atual) + 1))
